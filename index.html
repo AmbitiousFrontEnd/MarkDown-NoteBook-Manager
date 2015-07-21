@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset='utf-8' />
+	<title>notebook</title>
+	<link rel="stylesheet" type="text/css" href="./assert/font-awesome-4.3.0/css/font-awesome.min.css">
+	<link rel="stylesheet" type="text/css" href="css/style.css">
+</head>
+<body class="viewMode">
+<section class='sidebar'>
+	<div>
+		<ul>
+			<li id='create'><i class="fa fa-plus-circle fa-fw"></i><p>新建笔记</p></li>
+			<li id='sidebar-note'><i class="fa fa-file-text fa-fw"></i><p>笔记</p></li>
+			<li id='note-book'><i class="fa fa-book fa-fw"></i><p>笔记本</p></li>
+		</ul>
+	</div>
+</section>
+<section class='main'>
+<section id='note-list' class='note-list'>
+	<header>
+		<h1>笔记</h1>
+		<p><span id='note-count'>0</span>条笔记</p>
+	</header>
+	<div class="list">
+		<ul id='note-list-target-ul'>
+			<li>
+				<p>欢迎使用</p>
+				<div>
+					<ul>
+						<li><i class="fa fa-trash-o"></i></li>
+						<li><i class="fa fa-pencil"></i></li>
+					</ul>	
+				</div>
+			</li>	
+		</ul>
+	</div>
+</section>
+
+<section id='notebook-list' class='note-list notebook' style='display: none;'>
+	<header>
+		<h1>笔记本</h1>
+		<p id='new-notebook'><i class="sid-icon fa fa-plus fa-fw"></i>新建笔记本</p>
+	</header>
+	<div class="list">
+		<ul id='notebook-list-target-ul'>
+			<li>
+				<p>欢迎使用</p>
+				<div>
+					<ul>
+						<li><i class="fa fa-trash-o"></i></li>
+						<li><i class="fa fa-pencil"></i></li>
+					</ul>	
+				</div>
+			</li>	
+		</ul>
+		<ul id='notebook-list-templete' style='display: none;'>
+			<li>
+				<p>欢迎使用</p>
+				<div>
+					<ul>
+						<li><i class="fa fa-trash-o"></i></li>
+						<li><i class="fa fa-pencil"></i></li>
+					</ul>	
+				</div>
+			</li>	
+		</ul>
+	</div>
+
+	<div id='new-notebook-popup' style="display: none;">
+		<div class="wrap">
+				<p><i class="fa fa-book fa-2x"></i></p>
+				<p>创建笔记本</p>
+				<input  type='text' id='input-notebook-name' name='notebook-name' placeholder='给笔记本取个名字吧' autofocus required></input>
+				<div>
+					<span id='newnotebook-cancal'>取消</span>
+					<span id='newnotebook-confirm' class='disable'>确定</span>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>
+
+<section class='note-content'>
+	<header>
+		<ul>
+			<li id='save'><i class="fa fa-check"></i>完成</li>
+			<li id='full-screen'><i class="fa fa-arrows"></i>全屏</li>
+			<li id='exit'><i class="fa fa-external-link"></i>退出全屏</li>
+			<li id='edit'><i class="fa fa-pencil"></i>编辑</li>
+		</ul>
+		<ul>
+			<li><i class="fa fa-book"></i><span  id='category'>ss</span><i class="fa fa-angle-down"></i></li>
+		</ul>
+		<p class="over-title"></p>
+	</header>
+	<div id='view'>
+		<header>
+			<h1 id='title'></h1>
+		</header>
+		<div class="content" id='content'>
+		</div>
+	</div>
+	<div id='write'>
+		<div class="input-area">
+			<input  type='text' id='input-title' name='title-input' placeholder='请输入标题' required></input>
+			<textarea id='input-content' name='content-input' placeholder='请输入正文'></textarea>
+		</div>
+	</div>
+</section>
+</section>
+
+
+
+
+    <script src="js/marked.min.js"></script>  
+<script  src="js/app.js"></script>
+</body>
+</html>
