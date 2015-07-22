@@ -65,8 +65,20 @@ body{
 
 li#create:hover p{
 	display: block;
-	left: 50px;
+	left: 53px;
 	top: 100px;
+}
+
+li#sidebar-note:hover p{
+	display: block;
+	left: 53px;
+	top: 160px;	
+}
+
+li#note-book:hover p{
+	display: block;
+	left: 53px;
+	top: 220px;	
 }
 
 
@@ -128,7 +140,7 @@ li#create:hover p{
 	display: none;
 	position: absolute;
 	top: 17px;
-	right: 20px;
+	right: 60px;
 }
 
 .note-list .list li:hover div{
@@ -178,7 +190,6 @@ li#create:hover p{
 	width: 90%;
 	padding: 30px 0;
 	margin: 0 5%;
-	border-top:1px solid #ccc;
 }
 
 .note-content .content{
@@ -299,6 +310,7 @@ pre code{
 	overflow: hidden;
 	width: 90%;
 	margin: auto;
+	border-bottom: 1px solid #ccc;
 
 }
 .note-content >header ul{
@@ -307,20 +319,21 @@ pre code{
 
 
 
-.note-content >header ul:first-of-type{
+.note-content >header>ul:first-of-type{
 	float: right;
 }
 
-.note-content >header ul{
+.note-content >header>ul{
 	overflow: hidden;
 	padding: 20px 0;
 }
 
-.note-content >header ul li{
+.note-content >header>ul>li{
 	float: right;
 	list-style: none;
 	color: #fff;
 	background-color: #3dbe60;
+	opacity: 0.7;
 	border-radius: 3px;
 	display: inline-block;
 	padding: .2em .5em;
@@ -328,12 +341,19 @@ pre code{
 	cursor: pointer;
 }
 
-.note-content >header ul li i{
+.note-content >header>ul li:hover{
+	opacity: 1;
+}
+.note-content >header>ul>li i{
 	padding-right: 0.5em;
 }
 
-.note-content>header ul:last-of-type{
+.note-content>header>ul:last-of-type{
 	float: left;
+}
+
+#over-title{
+	  padding-left: 100px;
 }
 
 .note-content>header>p{
@@ -353,8 +373,8 @@ pre code{
 	padding: 10px 0;
 	margin: 0 5%;
 	border: 0;
-	font-size: 1.5em;
-	border-bottom: 1px solid #ccc;
+	font-size: 2em;
+	color: #2dbe60;
 }
 
 input:focus{
@@ -362,6 +382,7 @@ input:focus{
 }
 
 .input-area textarea{
+	line-height: 2em;
 	width: 90%;
 	padding: 0 5%;
 	margin-top: 2%;
@@ -383,6 +404,17 @@ input:focus{
 
 #fullScreenMode .note-content{
 	margin-left: 0;
+}
+
+#fullScreenMode .input-area input{
+	width: 70%;
+	margin: 0 15%;
+}
+
+
+#fullScreenMode .input-area textarea{
+	width: 70%;
+	padding: 0 15%;
 }
 
 #fullScreenMode #full-screen{
@@ -423,49 +455,8 @@ input:focus{
 	width:70%;
 	margin: 0 15%;	
 }
-/*
 
-#fullScreenMode .sidebar,.note-list{
-	display: none;
-}
-
-#fullScreenMode .note-content{
-	margin-left: 0;
-}
-
-#fullScreenMode #view{
-	display: none;
-}
-
-#fullScreenMode .input-area input{
-	width: 60%;
-	margin: 0 20%;
-}
-
-#fullScreenMode .input-area textarea{
-	width: 60%;
-	padding: 0 20%;
-}
-
-#write #exit{
-	display: none;
-}
-
-#fullScreenMode #full-screen,{
-	display: none;
-}
-
-#fullScreenMode #exit{
-	display: inline-block!important;
-}
-
-
-*/
-
-
-
-
-#new-notebook-popup{
+.popup{
 	position: fixed;
 	width: 100%;
 	height: 100%;
@@ -477,17 +468,23 @@ input:focus{
 	text-align: center;
 }
 
-#new-notebook-popup .wrap{
+.popup .wrap{
 	width: 40%;
 	margin: auto;
 }
 
-#new-notebook-popup .wrap p:first-of-type{
+.popup .wrap p:first-of-type{
 	margin-top: 200px;
 	margin-bottom: 20px;
 }
 
-#new-notebook-popup .wrap input{
+.popup .wrap p:nth-of-type(2){
+	margin-bottom: 20px;
+}
+
+
+
+.popup .wrap input{
   width: 60%;
   margin: 60px 15%;
   border: 0;
@@ -495,14 +492,13 @@ input:focus{
   font-weight: 100;
 }
 
-#new-notebook-popup .wrap div span{
+.popup .wrap div span{
 	border-radius: 5px;
 	display: inline-block;
 	cursor: pointer;
 	padding: 0.4em;
 	width: 30%;
 	margin: 5px;
-	transition: opacity 0.2s ease-in-out;
 }
 
 
@@ -529,7 +525,119 @@ input:focus{
 	background-color: #d9d9d9;
 }
 
+.delete-btn{
+	color: #fff;
+	background-color: #f00;
+	opacity: 0.7;
+}
+
+.delete-btn:hover{
+	opacity: 1;
+}
+
+.cancel-btn{
+	color: #fff;
+	background-color: #2dbe60;
+}
+
+.cancel-btn:hover{
+	background-color: #28a955;
+}
+
+p#delete-note-name{
+	font-size: 2em;
+	color:#2dbe60;
+	margin-bottom: 20px; 
+}
+
+
+#delete-note-popup{
+	display: none;
+}
+
+.block{
+	display: block;
+}
+.none{
+	display: none;
+}
+
+#select-category{
+	margin-left:0; 
+	position: absolute;
+	opacity: 1;
+}
+
+
+#select-category i:last-of-type{
+	padding: 0 0 0 0.5em; 
+}
+
+#drop-down{
+	display: none;
+	position: absolute;
+	width: 326px;
+	background-color: #fff;
+	opacity: 1;
+	color: #000;
+	top: 25px;
+	left: 0;
+	border-radius: 5px;
+	border: 3px solid rgba(217, 217, 217, 0.4);
+	border-top: 1px solid rgba(217, 217, 217, 0.4);
+	box-shadow: 0 6px 20px rgba(0, 0, 0, 0.04), -6px 8px 15px rgba(0, 0, 0, 0.04), 6px 8px 15px rgba(0, 0, 0, 0.04);
+	z-index: 1;
+}
+
+#drop-down:hover{
+	opacity: 1;
+}
+
+
+#drop-down p{
+	margin: 15px 0;
+	text-align: center;
+}
+
+#drop-down ul{
+	display: block;
+	border-top: 1px solid #ccc;
+}
+
+#drop-down ul li{
+	border-bottom: 1px solid #ccc;
+	position: relative;
+}
+
+#drop-down ul li p{
+	text-align: left;
+	padding: 1em 0;
+	margin: 0 1em;
+}
+
+#drop-down ul li:last-of-type{
+	border-bottom: 0;
+}
+
+#drop-down ul li:hover{
+	background-color: #2dbe60;
+	color: #fff;
+}
 
 
 
 
+#drop-down .category-select i{
+	display: block;
+
+}
+
+#drop-down i{
+	display: none;
+	position: absolute;	
+	right: 40px;
+ 	top: 14px;
+}
+.list-selected{
+	border: 2px solid #ccc;
+}

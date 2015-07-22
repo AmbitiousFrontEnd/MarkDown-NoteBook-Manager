@@ -1,12 +1,16 @@
 window.addEventListener('load', function(){
 
-	init();
+	UI.init();
 
 	//create event
 	(function(){
 		var create = document.getElementById('create');
 		create.addEventListener('click',function(){
 			UI.enterWriteMode();
+			document.getElementById('input-title').value ='';
+			document.getElementById('input-content').value = '';
+			Content.currentNote = null;
+			Content.state = 'edit';
 		});
 	})();
 
@@ -21,29 +25,80 @@ window.addEventListener('load', function(){
 
 			}else{
 				var content = document.getElementById('input-content').value;
-				Storage.storeArticle(title,content);
-				updateList();
+				var category = document.getElementById('category').innerText;
+				Storage.storeNote(title,content,category);
+				NoteList.updateList();
+				UI.enterViewMode();
+				Content.updateContent(title);
 			}
 		});
 	})();
 
-	//list click event
+	//list click event	和 删除笔记事件，点击列表中删除笔记后的动作
 	(function(){
 		var ul = document.querySelector('.list ul');
 		ul.addEventListener('click',function(event){
-			console.log(event.target);
-			if(event.target.tagName.toLowerCase() == 'p'){
+			var clickTag = event.target.tagName.toLowerCase();
+			if(clickTag == 'p'){
+				if(Content.currentSelectList != event.target){
+					if(Content.currentSelectList == ''){
+						Content.currentSelectList = event.target;
+					}else{
+						Content.currentSelectList.classList.remove('list-selected');
+					}
+					Content.currentSelectList = event.target;
+					Content.currentSelectList.classList.add('list-selected');
+				}
 				UI.enterViewMode();
-				updateContent(event.target.innerText);
+				Content.updateContent(event.target.innerText);
+				Content.currentNote = event.target.innerText;
+			}else if(clickTag == 'i'){
+				var noteName = getDeleteNoteNameElem(event.target).innerText;
+				UI.enterDeleteNotePage(noteName);
+				Content.readyToDeleteNoteName = noteName;
+				if(Content.currentSelectList == getDeleteNoteNameElem(event.target)){
+					Content.isNeedUpdateContent = true;
+					Content.currentSelectList = "";
+				}
+				function getDeleteNoteNameElem(i){
+					var p = i.parentNode.parentNode.parentNode.parentNode.firstElementChild;
+					return p;
+				}
 			}
+			console.log(event.target.tagName.toLowerCase());
 		},true);
 	})();
+
+	(function(){
+		var deleteNoteOp = document.getElementById('delete-note-op');
+		deleteNoteOp.addEventListener('click',function(event){
+			var opType = event.target.getAttribute('id') ; 
+			if(opType == 'delete-note-delete'){
+				//delete
+				Content.deleteNote(Content.readyToDeleteNoteName);
+				Content.readyToDeleteNoteName = '';
+				UI.quitDeleteNotePage();
+				NoteList.updateList();
+				if( Content.isNeedUpdateContent== true){
+					Content.updateContent();
+					Content.isNeedUpdateContent = false;
+				}
+
+			}else if(opType == 'delete-note-cancel'){
+				//cacel
+				Content.readyToDeleteNoteName = '';
+				UI.quitDeleteNotePage();
+			}
+		});
+	})();
+
+
 
 	//full screen
 	(function(){
 		var fullScreen = document.getElementById('full-screen');
 		fullScreen.addEventListener('click',function(){
-			enterFullSrceenMode();
+			UI.enterFullSrceenMode();
 		});
 	})();
 
@@ -52,7 +107,7 @@ window.addEventListener('load', function(){
 	(function(){
 		var exit = document.getElementById('exit');
 		exit.addEventListener('click',function(){
-			exitFullScreenMode();
+			UI.exitFullScreenMode();
 		});
 	})();
 
@@ -71,6 +126,7 @@ window.addEventListener('load', function(){
 		var notebook = document.getElementById('note-book');
 		notebook.addEventListener('click',function(){
 			NoteBook.viewNoteBookList();
+			Content.currentNoteBook = null;
 		});
 	})();
 
@@ -125,6 +181,60 @@ window.addEventListener('load', function(){
 		});
 	})();
 
+
+	// 在编辑模式下如果标题向上滚动出了屏幕，那就把标题放在over-title
+	(function(){
+		var  view = document.getElementById('view');
+		view.addEventListener('scroll',function(){
+			var title = document.getElementById('title');
+			var overTitle = document.getElementById('over-title');
+			if(view.scrollTop > title.parentNode.clientHeight){
+				overTitle.innerText = title.innerText;
+			}else{
+				overTitle.innerText = '';
+			}
+		});
+	})();
+
+
+	// 点击笔记本列表的事件，这个时候应该切换到笔记列表，并且显示本笔记本下的笔记
+	(function(){
+		var ul = document.getElementById('notebook-list-target-ul');
+		ul.addEventListener('click',function(event){
+			if(event.target.tagName.toLowerCase() == 'p'){
+				var noteBookName = event.target.innerText;
+				Content.currentNoteBook = noteBookName;
+				NoteList.viewNoteList(noteBookName);
+			}
+		});
+	})();
+
+	// 选择分类
+	(function(){
+		var selectCategory = document.getElementById('select-category');
+		var dropDown = document.getElementById('drop-down');
+		
+		selectCategory.addEventListener('click',function(){
+			dropDown.style.display = 'block';
+			CategorySelectList.updateList();
+		});
+
+		var categorySelectList = document.getElementById('category-select-list');
+		categorySelectList.addEventListener('click',function(event){
+			var categoryName = event.target.innerText;
+			var noteName = Content.currentNote;
+			NoteBook.moveNote(categoryName,noteName);
+			event.target.parentNode.classList.add('category-select');
+			document.getElementById('category').innerText = categoryName;
+		}) ;
+
+		dropDown.addEventListener('mouseleave',function(){
+			this.style.display = 'none';
+		})
+	})();
+
+
+
 });
 
 
@@ -176,8 +286,21 @@ NoteBook.viewNoteBookList = function(){
 		notebookElem.style.display = 'block';
 		noteListElem.style.display = 'none';
 	}
-
 };
+
+NoteBook.moveNote = function(noteBookName,noteName){
+	var noteList = localStorage.getItem('notebook_'+noteBookName);
+	if(noteList){
+		var ls = noteList.split('&&&');
+		if(ls.indexOf(noteName)==-1){
+			noteList = noteName + '&&&' + noteList;
+			localStorage.setItem('notebook_'+noteBookName,noteList);
+		}
+	}else{
+		localStorage.setItem('notebook_'+noteBookName,noteName);
+	}
+}
+
 
 var UI = {};
 
@@ -185,8 +308,8 @@ UI.enterWriteMode = function(){
 	WY.replaceClass(document.body,'writeMode','viewMode');
 	var view = document.getElementById('view');
 	var write = document.getElementById('write');
-	view.style.display = 'none';
-	write.style.display = 'block';		
+	WY.replaceClass(view,'none','block');
+	WY.replaceClass(write,'block','none');
 };
 UI.enterViewMode = function(){
 	WY.replaceClass(document.body,'viewMode','writeMode')
@@ -198,91 +321,100 @@ UI.enterViewMode = function(){
 
 
 UI.init = function(){
-		updateList();
-	var	list = Storage.getArticleList();
+	NoteList.updateList();
+	var	list = Storage.getNoteList();
 	if(list.length > 0){
-		updateContent(list[0]);
+		Content.updateContent(list[0]);
+		Content.currentNote = list[0];
 	}
+	CategorySelectList.updateList();
+};
+
+var CategorySelectList = {};
+
+CategorySelectList.updateList = function(){
+	var list = Storage.getNoteBookList();
+	var ul = document.getElementById('category-select-list');
+	var li = document.getElementById('category-list-templete').firstElementChild;
+	ul.innerHTML = '';
+	list.forEach(function(notebookName, index){
+		var li_ = li.cloneNode(true);
+		li_.firstElementChild.innerText = notebookName;
+		var noteList = Storage.getNoteList(notebookName);
+		if(noteList.indexOf(Content.currentNote)!=-1){
+			li_.classList.add('category-select');
+			document.getElementById('category').innerText = notebookName;
+		}
+		ul.appendChild(li_);
+	});
+};
+
+UI.enterAddNoteBookPage = function(){
+	var newnotebookpopup = document.getElementById('new-notebook-popup');
+	newnotebookpopup.style.display = 'block';
+};
+
+UI.enterDeleteNotePage = function(title){
+	var deleteNotePage = document.getElementById('delete-note-popup');
+	deleteNotePage.style.display = 'block';
+	var deleteNoteName = document.getElementById('delete-note-name');
+	deleteNoteName.innerText = title;
+}
+UI.quitDeleteNotePage = function(){
+	var deleteNotePage = document.getElementById('delete-note-popup');
+	deleteNotePage.style.display = 'none';	
+}
+
+UI.enterFullSrceenMode = function(){
+	document.body.setAttribute('id', 'fullScreenMode');
+};
+UI.exitFullScreenMode = function(){
+	document.body.removeAttribute('id');
 };
 
 
-function enterWriteMode(){
-	var view = document.getElementById('view');
-	var write = document.getElementById('write');
-	view.style.display = 'none';
-	write.style.display = 'block';	
-}
-
-function enterFullSrceenMode(){
-	document.body.setAttribute('id', 'fullScreenMode');
-}
-function exitFullScreenMode(){
-	document.body.removeAttribute('id');
-}
-
-
-
-
-
-function getTitie(li){
-	return li.firstElementChild.innerText;
-}
-
-function init(){
-	updateList();
-	var	list = Storage.getArticleList();
-	if(list.length > 0){
-		updateContent(list[0]);
-	}
-}
-
-function continueEdit(title){
-	UI.enterWriteMode();
-	document.getElementById('input-title').value = title;
-	document.getElementById('input-content').value = Storage.getArticle(title);
-}
-
-function updateContent(title){
-	var ct = document.getElementById('content');
-	var ti = document.getElementById('title');
-	ti.innerHTML = title;
-	ct.innerHTML = marked(Storage.getArticle(title));
-}
 
 var NoteList = {};
 
-var Content = {};
+var Content = {
+	readyToDeleteNoteName:'',
+	currentSelectList:'',
+	currentNoteBook:null,
+	currentNote:null,
+	state:'view'
+};
 
 Content.continueEdit = function(title){
 	UI.enterWriteMode();
 	document.getElementById('input-title').value = title;
-	document.getElementById('input-content').value = Storage.getArticle(title);
+	document.getElementById('input-content').value = Storage.getNote(title);
 
 }
 
 Content.updateContent =function(title){
 	var ct = document.getElementById('content');
 	var ti = document.getElementById('title');
-	ti.innerHTML = title;
-	ct.innerHTML = marked(Storage.getArticle(title));	
+	if(title){
+		ti.innerHTML = title;
+		var note = JSON.parse(Storage.getNote(title));
+		ct.innerHTML = marked(note.content);
+	}else{
+		var list = Storage.getNoteList(Content.currentNoteBook);
+		if(list.length > 0){
+			ti.innerHTML = list[0];
+			var note = JSON.parse(Storage.getNote(list[0]));
+			ct.innerHTML = marked(note.content);
+		}
+	}	
 }
 
+Content.deleteNote = function(noteName){
+	Storage.deleteNote(noteName);
+};
 
 
 NoteList.viewNoteList =function(NoteBookName){
-	if(arguments.length == 0){
-		var	list = Storage.getArticleList();
-		if(list.length == 0){
-			return;
-		}
-		var noteCount = document.getElementById('note-count');
-		noteCount.innerText = ''+list.length;
-		var ul = document.getElementById('note-list-target-ul');
-		ul.innerHTML = '';
-		list.forEach(function(element, index){
-			ul.innerHTML += createAList(element);
-		});
-	}
+	NoteList.updateList(NoteBookName);
 	var notebookElem = document.getElementById('notebook-list');
 	var noteListElem = document.getElementById('note-list');
 	if(WY.getStyle(noteListElem,'display')=='none'){
@@ -291,62 +423,87 @@ NoteList.viewNoteList =function(NoteBookName){
 	}
 }
 
-function updateList(){
-	var	list = Storage.getArticleList();
-	if(list.length == 0){
-		return;
-	}
+NoteList.createAList = function(text){
+	var li_ = document.getElementById('note-list-templete').firstElementChild;
+	var li = li_.cloneNode(true);
+	var p = li.querySelector('p');
+	p.innerText = text;
+	return li;
+};
+NoteList.updateList = function(noteBookName){
+	var	list = Storage.getNoteList(noteBookName);
 	var noteCount = document.getElementById('note-count');
 	noteCount.innerText = ''+list.length;
-	var ul = document.querySelector('.note-list .list ul');
+	var ul = document.getElementById('note-list-target-ul');
 	ul.innerHTML = '';
 	list.forEach(function(element, index){
-		ul.innerHTML += createAList(element);
+		ul.appendChild(NoteList.createAList(element));
 	});
-}
-
-function createAList(content){
-	return '<li><p>'+content+'</p></li>'; 
+	var noteListTitle = document.getElementById('note-list-title');
+	if(noteBookName){
+		noteListTitle.innerText = noteBookName;
+	}else{
+		noteListTitle.innerText = '笔记';
+	}
 }
 
 
 var Storage = {};
 
-Storage.storeArticle = function(title,content){
-	var list = localStorage.getItem('title-list');	
+Storage.storeNote = function(title,content,category){
+	var list = localStorage.getItem('title-list');
 	if(list === null){
 		localStorage.setItem('title-list',title);
 	}else{
 		if(!Storage.isExists(title)){
 			localStorage.setItem('title-list',title+'&&&'+list);
-		}	
+		}
 	}
-	localStorage.setItem(title,content);
+	if(!category){
+		category = '未分类';
+	}
+	var time = new Date();
+	var note = {
+		'title':title,
+		'content':content,
+		'category':category,
+		'time':time
+	};
+	localStorage.setItem(title,JSON.stringify(note));
 }
 
-Storage.getArticleList = function(){
-	var listStr = localStorage.getItem('title-list');
-	if(listStr){
-		var list = listStr.split('&&&');
-		return list;
+Storage.getNoteList = function(noteBookName){
+	var list = [];
+	var str;
+	if(noteBookName == null){
+		var str = localStorage.getItem('title-list');
 	}else{
-		return [];
+		str = localStorage.getItem('notebook_'+noteBookName);
 	}
+	if(str){
+		list = str.split('&&&');
+	}
+	return list;
 };
 
-Storage.getArticle = function(title){
+Storage.getNote = function(title){
+	//JSON.stringify()
+	return  localStorage.getItem(title);
+};
+
+Storage.getNoteCategory = function(title){
 	return localStorage.getItem(title);
 };
 
-Storage.deleteArticle = function(title){
+Storage.deleteNote = function(title){
 	var listStr = localStorage.getItem('title-list');
-	listStr.replace(title+'&&&', '');
+	listStr = listStr.replace(title+'&&&', '');
 	localStorage.setItem('title-list',listStr);
 	localStorage.removeItem(title);
 };
 
 Storage.isExists = function(title){
-	var list = Storage.getArticleList();
+	var list = Storage.getNoteList();
 	if(list.indexOf(title)!=-1){
 		return true;
 	}else{

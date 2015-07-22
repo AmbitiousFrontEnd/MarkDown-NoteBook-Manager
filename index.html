@@ -11,15 +11,15 @@
 	<div>
 		<ul>
 			<li id='create'><i class="fa fa-plus-circle fa-fw"></i><p>新建笔记</p></li>
-			<li id='sidebar-note'><i class="fa fa-file-text fa-fw"></i><p>笔记</p></li>
-			<li id='note-book'><i class="fa fa-book fa-fw"></i><p>笔记本</p></li>
+			<li id='sidebar-note'><i class="fa fa-file-text fa-fw"></i><p>查看笔记</p></li>
+			<li id='note-book'><i class="fa fa-book fa-fw"></i><p>查看笔记本</p></li>
 		</ul>
 	</div>
 </section>
 <section class='main'>
 <section id='note-list' class='note-list'>
 	<header>
-		<h1>笔记</h1>
+		<h1 id='note-list-title'>笔记</h1>
 		<p><span id='note-count'>0</span>条笔记</p>
 	</header>
 	<div class="list">
@@ -29,11 +29,31 @@
 				<div>
 					<ul>
 						<li><i class="fa fa-trash-o"></i></li>
-						<li><i class="fa fa-pencil"></i></li>
 					</ul>	
 				</div>
 			</li>	
 		</ul>
+		<ul id='note-list-templete' style='display: none;'>
+			<li>
+				<p>欢迎使用</p>
+				<div>
+					<ul>
+						<li class=' op-delete-note'><i class="fa fa-trash-o"></i></li>
+					</ul>	
+				</div>
+			</li>	
+		</ul>
+	</div>
+	<div id='delete-note-popup' class="popup">
+		<div class='wrap'>
+			<p><i class="fa fa-trash-o fa-2x"></i></p>
+			<p>删除笔记</p>
+			<p id='delete-note-name'>ss</p>
+			<div id='delete-note-op'>
+					<span id='delete-note-delete' class='delete-btn'>删除</span>
+					<span id='delete-note-cancel' class='cancel-btn'>取消</span>
+			</div>
+		</div>
 	</div>
 </section>
 
@@ -67,7 +87,7 @@
 		</ul>
 	</div>
 
-	<div id='new-notebook-popup' style="display: none;">
+	<div id='new-notebook-popup' class="popup" style="display: none;">
 		<div class="wrap">
 				<p><i class="fa fa-book fa-2x"></i></p>
 				<p>创建笔记本</p>
@@ -89,14 +109,23 @@
 			<li id='exit'><i class="fa fa-external-link"></i>退出全屏</li>
 			<li id='edit'><i class="fa fa-pencil"></i>编辑</li>
 		</ul>
-		<ul>
-			<li><i class="fa fa-book"></i><span  id='category'>ss</span><i class="fa fa-angle-down"></i></li>
+		<ul >
+			<li id='select-category'><i class="fa fa-book"></i><span  id='category'>未分类</span><i class="fa fa-angle-down"></i>
+			<div  id='drop-down'>
+				<p>请选择分类</p>
+				<ul id='category-select-list'>
+				</ul>
+				<ul id='category-list-templete' style="display: none;">
+				<li><p></p><i class="fa fa-check-circle"></i></li>
+				</ul>
+			</div>
+			</li>
 		</ul>
-		<p class="over-title"></p>
+		<p id='over-title' class="over-title"></p>
 	</header>
 	<div id='view'>
 		<header>
-			<h1 id='title'></h1>
+			<h1 id="title"></h1>
 		</header>
 		<div class="content" id='content'>
 		</div>
@@ -109,6 +138,7 @@
 	</div>
 </section>
 </section>
+
 
 
 
