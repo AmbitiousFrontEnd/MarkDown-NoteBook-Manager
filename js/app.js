@@ -25,7 +25,7 @@ window.addEventListener('load', function(){
 
 			}else{
 				var content = document.getElementById('input-content').value;
-				var category = document.getElementById('category').innerText;
+				var category = document.getElementById('category').innerHTML;
 				Storage.storeNote(title,content,category);
 				NoteList.updateList();
 				UI.enterViewMode();
@@ -50,19 +50,21 @@ window.addEventListener('load', function(){
 					Content.currentSelectList.classList.add('list-selected');
 				}
 				UI.enterViewMode();
-				Content.updateContent(event.target.innerText);
-				Content.currentNote = event.target.innerText;
+				Content.updateContent(event.target.innerHTML);
+				Content.currentNote = event.target.innerHTML;
 			}else if(clickTag == 'i'){
-				var noteName = getDeleteNoteNameElem(event.target).innerText;
+				function getDeleteNoteNameElem(i){
+					var p = i.parentNode.parentNode.parentNode.parentNode.firstElementChild;
+					return p;
+				}
+
+
+				var noteName = getDeleteNoteNameElem(event.target).innerHTML;
 				UI.enterDeleteNotePage(noteName);
 				Content.readyToDeleteNoteName = noteName;
 				if(Content.currentSelectList == getDeleteNoteNameElem(event.target)){
 					Content.isNeedUpdateContent = true;
 					Content.currentSelectList = "";
-				}
-				function getDeleteNoteNameElem(i){
-					var p = i.parentNode.parentNode.parentNode.parentNode.firstElementChild;
-					return p;
 				}
 			}
 			console.log(event.target.tagName.toLowerCase());
@@ -83,7 +85,7 @@ window.addEventListener('load', function(){
 					Content.updateContent();
 					Content.isNeedUpdateContent = false;
 				}
-
+				Content.readyToDeleteNoteName='';
 			}else if(opType == 'delete-note-cancel'){
 				//cacel
 				Content.readyToDeleteNoteName = '';
@@ -115,7 +117,7 @@ window.addEventListener('load', function(){
 	(function(){
 		var edit = document.getElementById('edit');
 		edit.addEventListener('click',function(){
-			var title = document.getElementById('title').innerText;
+			var title = document.getElementById('title').innerHTML;
 			Content.continueEdit(title);
 		});
 	})();
@@ -189,9 +191,9 @@ window.addEventListener('load', function(){
 			var title = document.getElementById('title');
 			var overTitle = document.getElementById('over-title');
 			if(view.scrollTop > title.parentNode.clientHeight){
-				overTitle.innerText = title.innerText;
+				overTitle.innerHTML = title.innerHTML;
 			}else{
-				overTitle.innerText = '';
+				overTitle.innerHTML = '';
 			}
 		});
 	})();
@@ -202,7 +204,7 @@ window.addEventListener('load', function(){
 		var ul = document.getElementById('notebook-list-target-ul');
 		ul.addEventListener('click',function(event){
 			if(event.target.tagName.toLowerCase() == 'p'){
-				var noteBookName = event.target.innerText;
+				var noteBookName = event.target.innerHTML;
 				Content.currentNoteBook = noteBookName;
 				NoteList.viewNoteList(noteBookName);
 			}
@@ -215,21 +217,21 @@ window.addEventListener('load', function(){
 		var dropDown = document.getElementById('drop-down');
 		
 		selectCategory.addEventListener('click',function(){
-			dropDown.style.display = 'block';
+			WY.replaceClass(dropDown,'block','none');
 			CategorySelectList.updateList();
 		});
 
 		var categorySelectList = document.getElementById('category-select-list');
 		categorySelectList.addEventListener('click',function(event){
-			var categoryName = event.target.innerText;
+			var categoryName = event.target.innerHTML;
 			var noteName = Content.currentNote;
 			NoteBook.moveNote(categoryName,noteName);
 			event.target.parentNode.classList.add('category-select');
-			document.getElementById('category').innerText = categoryName;
+			document.getElementById('category').innerHTML = categoryName;
 		}) ;
 
 		dropDown.addEventListener('mouseleave',function(){
-			this.style.display = 'none';
+			WY.replaceClass(this,'none','block');
 		})
 	})();
 
@@ -246,14 +248,14 @@ var NoteBook = {
 
 NoteBook.enterAddNoteBookPage = function(){
 	var newnotebookpopup = document.getElementById('new-notebook-popup');
-	newnotebookpopup.style.display = 'block';
+	WY.replaceClass(newnotebookpopup,'block','none');
 };
 
 NoteBook.quitAddNoteBookPage = function(){
 	var noteBookNameInputer = document.getElementById('input-notebook-name');
 	noteBookNameInputer.value = "";
 	var newNotebookPopup = document.getElementById('new-notebook-popup');
-	newNotebookPopup.style.display = 'none';
+	WY.replaceClass(newNotebookPopup,'none','block');
 };
 
 NoteBook.addNoteBook = function(){
@@ -283,8 +285,8 @@ NoteBook.viewNoteBookList = function(){
 	var notebookElem = document.getElementById('notebook-list');
 	var noteListElem = document.getElementById('note-list');
 	if(WY.getStyle(notebookElem,'display')=='none'){
-		notebookElem.style.display = 'block';
-		noteListElem.style.display = 'none';
+		WY.replaceClass(noteListElem,'none','block');
+		WY.replaceClass(notebookElem,'block','none');
 	}
 };
 
@@ -315,8 +317,8 @@ UI.enterViewMode = function(){
 	WY.replaceClass(document.body,'viewMode','writeMode')
 	var view = document.getElementById('view');
 	var write = document.getElementById('write');
-	view.style.display = 'block';
-	write.style.display = 'none';
+	WY.replaceClass(view,'block','none');
+	WY.replaceClass(write,'none','block');
 };
 
 
@@ -339,11 +341,11 @@ CategorySelectList.updateList = function(){
 	ul.innerHTML = '';
 	list.forEach(function(notebookName, index){
 		var li_ = li.cloneNode(true);
-		li_.firstElementChild.innerText = notebookName;
+		li_.firstElementChild.innerHTML = notebookName;
 		var noteList = Storage.getNoteList(notebookName);
 		if(noteList.indexOf(Content.currentNote)!=-1){
 			li_.classList.add('category-select');
-			document.getElementById('category').innerText = notebookName;
+			document.getElementById('category').innerHTML = notebookName;
 		}
 		ul.appendChild(li_);
 	});
@@ -358,7 +360,7 @@ UI.enterDeleteNotePage = function(title){
 	var deleteNotePage = document.getElementById('delete-note-popup');
 	deleteNotePage.style.display = 'block';
 	var deleteNoteName = document.getElementById('delete-note-name');
-	deleteNoteName.innerText = title;
+	deleteNoteName.innerHTML = title;
 }
 UI.quitDeleteNotePage = function(){
 	var deleteNotePage = document.getElementById('delete-note-popup');
@@ -387,7 +389,7 @@ var Content = {
 Content.continueEdit = function(title){
 	UI.enterWriteMode();
 	document.getElementById('input-title').value = title;
-	document.getElementById('input-content').value = Storage.getNote(title);
+	document.getElementById('input-content').value = Storage.getNoteContent(title);
 
 }
 
@@ -418,8 +420,8 @@ NoteList.viewNoteList =function(NoteBookName){
 	var notebookElem = document.getElementById('notebook-list');
 	var noteListElem = document.getElementById('note-list');
 	if(WY.getStyle(noteListElem,'display')=='none'){
-		notebookElem.style.display = 'none';
-		noteListElem.style.display = 'block';
+		WY.replaceClass(notebookElem,'none','block');
+		WY.replaceClass(noteListElem,'block','none');
 	}
 }
 
@@ -427,13 +429,13 @@ NoteList.createAList = function(text){
 	var li_ = document.getElementById('note-list-templete').firstElementChild;
 	var li = li_.cloneNode(true);
 	var p = li.querySelector('p');
-	p.innerText = text;
+	p.innerHTML = text;
 	return li;
 };
 NoteList.updateList = function(noteBookName){
 	var	list = Storage.getNoteList(noteBookName);
 	var noteCount = document.getElementById('note-count');
-	noteCount.innerText = ''+list.length;
+	noteCount.innerHTML = ''+list.length;
 	var ul = document.getElementById('note-list-target-ul');
 	ul.innerHTML = '';
 	list.forEach(function(element, index){
@@ -441,9 +443,9 @@ NoteList.updateList = function(noteBookName){
 	});
 	var noteListTitle = document.getElementById('note-list-title');
 	if(noteBookName){
-		noteListTitle.innerText = noteBookName;
+		noteListTitle.innerHTML = noteBookName;
 	}else{
-		noteListTitle.innerText = '笔记';
+		noteListTitle.innerHTML = '笔记';
 	}
 }
 
@@ -491,13 +493,22 @@ Storage.getNote = function(title){
 	return  localStorage.getItem(title);
 };
 
+Storage.getNoteContent = function(title){
+	var note = JSON.parse(Storage.getNote(title));
+	return note.content;
+}
+
 Storage.getNoteCategory = function(title){
 	return localStorage.getItem(title);
 };
 
 Storage.deleteNote = function(title){
 	var listStr = localStorage.getItem('title-list');
-	listStr = listStr.replace(title+'&&&', '');
+	if(listStr.indexOf('&&&')!=-1){
+		listStr = listStr.replace(title+'&&&', '');
+	}else{
+		listStr = '';
+	}
 	localStorage.setItem('title-list',listStr);
 	localStorage.removeItem(title);
 };
