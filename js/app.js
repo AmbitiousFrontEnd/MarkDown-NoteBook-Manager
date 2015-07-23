@@ -2,37 +2,64 @@ window.addEventListener('load', function(){
 
 	UI.init();
 
-	//create event
+	// 点击创建笔记按钮之后的事件
+	//new Note
 	(function(){
 		var create = document.getElementById('create');
 		create.addEventListener('click',function(){
 			UI.enterWriteMode();
 			document.getElementById('input-title').value ='';
 			document.getElementById('input-content').value = '';
-			Content.currentNote = null;
+			var category = document.getElementById('category');
+			category.innerHTML = '未分类';
+			Content.currentProcNoteName = null;
 			Content.state = 'edit';
 		});
 	})();
 
 
+	// new notebook 点击创建新笔记本后的事件
+	(function(){
+		var newnotebook = document.getElementById('new-notebook');
+		newnotebook.addEventListener('click',function(){
+			NoteBook.enterAddNoteBookPage();
+		});
 
-	//save event
+	})();
+
+
+
+
+	//save note
 	(function(){
 		var save = document.getElementById('save');
 		save.addEventListener('click',function(){
 			var title = document.getElementById('input-title').value;
-			if(!title){
-
-			}else{
+			if(title){
 				var content = document.getElementById('input-content').value;
 				var category = document.getElementById('category').innerHTML;
-				Storage.storeNote(title,content,category);
+				if(title != Content.currentProcNoteName){ //修改了笔记的名字
+					Storage.storeNote(title,content,category,Content.currentProcNoteName);
+				}else{
+					Storage.storeNote(title,content,category);					
+				}
+				Content.currentProcNoteName = title;
 				NoteList.updateList();
 				UI.enterViewMode();
-				Content.updateContent(title);
+				UI.updateContent(title);
 			}
 		});
 	})();
+
+	//edit note
+	(function(){
+		var edit = document.getElementById('edit');
+		edit.addEventListener('click',function(){
+			UI.editNote(Content.currentProcNoteName);
+			Content.currentProcNoteName = document.getElementById('input-title').value;
+		});
+	})();
+
 
 	//list click event	和 删除笔记事件，点击列表中删除笔记后的动作
 	(function(){
@@ -40,34 +67,24 @@ window.addEventListener('load', function(){
 		ul.addEventListener('click',function(event){
 			var clickTag = event.target.tagName.toLowerCase();
 			if(clickTag == 'p'){
-				if(Content.currentSelectList != event.target){
-					if(Content.currentSelectList == ''){
-						Content.currentSelectList = event.target;
-					}else{
-						Content.currentSelectList.classList.remove('list-selected');
-					}
-					Content.currentSelectList = event.target;
-					Content.currentSelectList.classList.add('list-selected');
+				var selected = document.getElementsByClassName('list-selected');
+				if(selected.length>0){
+					selected[0].classList.remove('list-selected');
 				}
+				event.target.classList.add('list-selected');
 				UI.enterViewMode();
-				Content.updateContent(event.target.innerHTML);
-				Content.currentNote = event.target.innerHTML;
+				UI.updateContent(event.target.innerHTML);
+				Content.currentProcNoteName = event.target.innerHTML;
+				CategorySelectList.updateList();//Content.currentProcNoteName
 			}else if(clickTag == 'i'){
 				function getDeleteNoteNameElem(i){
 					var p = i.parentNode.parentNode.parentNode.parentNode.firstElementChild;
 					return p;
 				}
-
-
 				var noteName = getDeleteNoteNameElem(event.target).innerHTML;
 				UI.enterDeleteNotePage(noteName);
 				Content.readyToDeleteNoteName = noteName;
-				if(Content.currentSelectList == getDeleteNoteNameElem(event.target)){
-					Content.isNeedUpdateContent = true;
-					Content.currentSelectList = "";
-				}
 			}
-			console.log(event.target.tagName.toLowerCase());
 		},true);
 	})();
 
@@ -77,20 +94,15 @@ window.addEventListener('load', function(){
 			var opType = event.target.getAttribute('id') ; 
 			if(opType == 'delete-note-delete'){
 				//delete
-				Content.deleteNote(Content.readyToDeleteNoteName);
-				Content.readyToDeleteNoteName = '';
+				Storage.deleteNote(Content.readyToDeleteNoteName);
 				UI.quitDeleteNotePage();
 				NoteList.updateList();
-				if( Content.isNeedUpdateContent== true){
-					Content.updateContent();
-					Content.isNeedUpdateContent = false;
-				}
-				Content.readyToDeleteNoteName='';
+				UI.updateContent();
 			}else if(opType == 'delete-note-cancel'){
 				//cacel
-				Content.readyToDeleteNoteName = '';
 				UI.quitDeleteNotePage();
 			}
+			Content.readyToDeleteNoteName='';
 		});
 	})();
 
@@ -113,32 +125,18 @@ window.addEventListener('load', function(){
 		});
 	})();
 
-	// edit
-	(function(){
-		var edit = document.getElementById('edit');
-		edit.addEventListener('click',function(){
-			var title = document.getElementById('title').innerHTML;
-			Content.continueEdit(title);
-		});
-	})();
-
+	
 
 	//view notebook
 	(function(){
 		var notebook = document.getElementById('note-book');
 		notebook.addEventListener('click',function(){
-			NoteBook.viewNoteBookList();
+			UI.updateNoteBookList();
 			Content.currentNoteBook = null;
 		});
 	})();
 
-	// new notebook 点击创建新笔记本后的事件
-	(function(){
-		var newnotebook = document.getElementById('new-notebook');
-		newnotebook.addEventListener('click',function(){
-			NoteBook.enterAddNoteBookPage();
-		});
-	})();
+	
 
 	//创建笔记本页面输入框的事件
 	(function(){
@@ -200,6 +198,7 @@ window.addEventListener('load', function(){
 
 
 	// 点击笔记本列表的事件，这个时候应该切换到笔记列表，并且显示本笔记本下的笔记
+	//以及点击列表中的删除和编辑按钮时的事件
 	(function(){
 		var ul = document.getElementById('notebook-list-target-ul');
 		ul.addEventListener('click',function(event){
@@ -208,7 +207,34 @@ window.addEventListener('load', function(){
 				Content.currentNoteBook = noteBookName;
 				NoteList.viewNoteList(noteBookName);
 			}
+			else if(event.target.tagName.toLowerCase() == 'i'){
+				if(event.target.classList.contains('del')){ //delete nootbook
+					Content.readyToDeleteNoteBookName = event.target.parentNode.parentNode.parentNode.parentNode.firstElementChild.innerHTML;
+					UI.enterDeleteNoteBookPage();
+					var deleteNotebookName = document.getElementById('delete-notebook-name');
+					deleteNotebookName.innerHTML = Content.readyToDeleteNoteBookName;
+				}else{ //edit
+
+				}
+				event.stopPropagation();
+			}
 		});
+
+		(function(){
+			var deleteNotebookDelete = document.getElementById('delete-notebook-delete');
+			deleteNotebookDelete.addEventListener('click',function(){
+				Storage.deleteNoteBook(Content.readyToDeleteNoteBookName);
+				UI.quitDeleteNoteBookPage();
+				UI.updateNoteBookList();
+			});
+
+			var  deleteNotebookCancel = document.getElementById('delete-notebook-cancel');
+			deleteNotebookCancel.addEventListener('click',function(){
+				UI.quitDeleteNoteBookPage();				
+			});
+		})();
+
+
 	})();
 
 	// 选择分类
@@ -218,21 +244,23 @@ window.addEventListener('load', function(){
 		
 		selectCategory.addEventListener('click',function(){
 			WY.replaceClass(dropDown,'block','none');
-			CategorySelectList.updateList();
 		});
 
 		var categorySelectList = document.getElementById('category-select-list');
 		categorySelectList.addEventListener('click',function(event){
 			var categoryName = event.target.innerHTML;
-			var noteName = Content.currentNote;
-			NoteBook.moveNote(categoryName,noteName);
+			var selected = document.getElementsByClassName('category-select');
+			if(selected.length>0){
+				selected[0].classList.remove('category-select');
+			}
 			event.target.parentNode.classList.add('category-select');
 			document.getElementById('category').innerHTML = categoryName;
+			event.stopPropagation();
 		}) ;
 
 		dropDown.addEventListener('mouseleave',function(){
 			WY.replaceClass(this,'none','block');
-		})
+		});
 	})();
 
 
@@ -240,11 +268,16 @@ window.addEventListener('load', function(){
 });
 
 
-
-var NoteBook = {
-	isNoteListChanged:false,
-	isNoteListInit:false
+var Content = {
+	readyToDeleteNoteName:'',
+	currentNoteBook:null,
+	currentNote:null,
+	state:'view',
+	currentProcNoteName:null
 };
+
+
+var NoteBook = {};
 
 NoteBook.enterAddNoteBookPage = function(){
 	var newnotebookpopup = document.getElementById('new-notebook-popup');
@@ -263,35 +296,11 @@ NoteBook.addNoteBook = function(){
 	var newNoteBookName = noteBookNameInputer.value;
 	Storage.addNoteBook(newNoteBookName);
 	NoteBook.quitAddNoteBookPage();
-	this.isNoteListChanged = true;
-	NoteBook.viewNoteBookList();
-};
-
-NoteBook.viewNoteBookList = function(){
-	if(this.isNoteListInit==false ||(this.isNoteListInit == true && this.isNoteListChanged == true)){
-		var notebooklist = Storage.getNoteBookList();
-		var listTemplete = document.querySelector('#notebook-list-templete>li');
-		var ul = document.getElementById('notebook-list-target-ul');
-		ul.innerHTML = '';
-		notebooklist.forEach(function(notebookName, index){
-			var li = listTemplete.cloneNode(true);
-			var p = li.querySelector('p');
-			p.innerHTML = notebookName;
-			ul.appendChild(li);		
-		});
-		this.isNoteListInit = true;
-		this.isNoteListChanged = false;
-	}
-	var notebookElem = document.getElementById('notebook-list');
-	var noteListElem = document.getElementById('note-list');
-	if(WY.getStyle(notebookElem,'display')=='none'){
-		WY.replaceClass(noteListElem,'none','block');
-		WY.replaceClass(notebookElem,'block','none');
-	}
+	UI.updateNoteBookList();
 };
 
 NoteBook.moveNote = function(noteBookName,noteName){
-	var noteList = localStorage.getItem('notebook_'+noteBookName);
+	var noteList = Storage.getNoteList(noteBookName);
 	if(noteList){
 		var ls = noteList.split('&&&');
 		if(ls.indexOf(noteName)==-1){
@@ -306,6 +315,20 @@ NoteBook.moveNote = function(noteBookName,noteName){
 
 var UI = {};
 
+UI.init = function(){
+	NoteList.updateList();
+	var	list = Storage.getNoteList();
+	if(list.length > 0){
+		UI.updateContent(list[0]);
+		Content.currentProcNoteName = list[0];
+	}else{
+		Content.currentProcNoteName = null;
+		UI.updateContent();
+	}
+	CategorySelectList.updateList();
+	Storage.addNoteBook('未分类');
+};
+
 UI.enterWriteMode = function(){
 	WY.replaceClass(document.body,'writeMode','viewMode');
 	var view = document.getElementById('view');
@@ -319,36 +342,6 @@ UI.enterViewMode = function(){
 	var write = document.getElementById('write');
 	WY.replaceClass(view,'block','none');
 	WY.replaceClass(write,'none','block');
-};
-
-
-UI.init = function(){
-	NoteList.updateList();
-	var	list = Storage.getNoteList();
-	if(list.length > 0){
-		Content.updateContent(list[0]);
-		Content.currentNote = list[0];
-	}
-	CategorySelectList.updateList();
-};
-
-var CategorySelectList = {};
-
-CategorySelectList.updateList = function(){
-	var list = Storage.getNoteBookList();
-	var ul = document.getElementById('category-select-list');
-	var li = document.getElementById('category-list-templete').firstElementChild;
-	ul.innerHTML = '';
-	list.forEach(function(notebookName, index){
-		var li_ = li.cloneNode(true);
-		li_.firstElementChild.innerHTML = notebookName;
-		var noteList = Storage.getNoteList(notebookName);
-		if(noteList.indexOf(Content.currentNote)!=-1){
-			li_.classList.add('category-select');
-			document.getElementById('category').innerHTML = notebookName;
-		}
-		ul.appendChild(li_);
-	});
 };
 
 UI.enterAddNoteBookPage = function(){
@@ -367,6 +360,16 @@ UI.quitDeleteNotePage = function(){
 	deleteNotePage.style.display = 'none';	
 }
 
+UI.enterDeleteNoteBookPage = function(){
+	var deleteNotebookPopup = document.getElementById('delete-notebook-popup');
+	deleteNotebookPopup.style.display = 'block';
+};
+
+UI.quitDeleteNoteBookPage = function(){
+	var deleteNotebookPopup = document.getElementById('delete-notebook-popup');
+	deleteNotebookPopup.style.display = 'none';
+};
+
 UI.enterFullSrceenMode = function(){
 	document.body.setAttribute('id', 'fullScreenMode');
 };
@@ -374,46 +377,75 @@ UI.exitFullScreenMode = function(){
 	document.body.removeAttribute('id');
 };
 
+UI.editNote = function(noteName){
+	UI.enterWriteMode();
+	document.getElementById('input-title').value = noteName;
+	document.getElementById('input-content').value = Storage.getNoteContent(noteName);
+
+}
+
+UI.updateContent =function(noteName){
+	var ct = document.getElementById('content');
+	var ti = document.getElementById('title');
+	if(noteName){
+		var note =  Storage.getNote(noteName);
+		ti.innerHTML = note.title;
+		ct.innerHTML = marked(note.content);
+	}else{
+		var noteList = Storage.getNoteList(Content.currentNoteBook);
+		if(noteList.length > 0){
+			var note =  Storage.getNote(noteList[0]);
+			ti.innerHTML = note.title;
+			ct.innerHTML = marked(note.content);
+		}else{
+			ti.innerHTML = '';
+			ct.innerHTML = '';
+		}
+	}	
+};
+
+UI.updateNoteBookList = function(){
+	var notebooklist = Storage.getNoteBookList();
+	var listTemplete = document.querySelector('#notebook-list-templete>li');
+	var ul = document.getElementById('notebook-list-target-ul');
+	ul.innerHTML = '';
+	notebooklist.forEach(function(notebookName, index){
+		var li = listTemplete.cloneNode(true);
+		var p = li.querySelector('p');
+		p.innerHTML = notebookName;
+		ul.appendChild(li);		
+	});
+	var notebookElem = document.getElementById('notebook-list');
+	var noteListElem = document.getElementById('note-list');
+	if(WY.getStyle(notebookElem,'display')=='none'){
+		WY.replaceClass(noteListElem,'none','block');
+		WY.replaceClass(notebookElem,'block','none');
+	}
+};
+
+
+var CategorySelectList = {};
+
+CategorySelectList.updateList = function(){
+	var list = Storage.getNoteBookList();
+	var ul = document.getElementById('category-select-list');
+	var li = document.getElementById('category-list-templete').firstElementChild;
+	ul.innerHTML = '';
+	list.forEach(function(notebookName, index){
+		var li_ = li.cloneNode(true);
+		li_.firstElementChild.innerHTML = notebookName;
+		var noteList = Storage.getNoteList(notebookName);
+		if(noteList.indexOf(Content.currentProcNoteName)!=-1){
+			li_.classList.add('category-select');
+			document.getElementById('category').innerHTML = notebookName;
+		}
+		ul.appendChild(li_);
+	});
+};
+
 
 
 var NoteList = {};
-
-var Content = {
-	readyToDeleteNoteName:'',
-	currentSelectList:'',
-	currentNoteBook:null,
-	currentNote:null,
-	state:'view'
-};
-
-Content.continueEdit = function(title){
-	UI.enterWriteMode();
-	document.getElementById('input-title').value = title;
-	document.getElementById('input-content').value = Storage.getNoteContent(title);
-
-}
-
-Content.updateContent =function(title){
-	var ct = document.getElementById('content');
-	var ti = document.getElementById('title');
-	if(title){
-		ti.innerHTML = title;
-		var note = JSON.parse(Storage.getNote(title));
-		ct.innerHTML = marked(note.content);
-	}else{
-		var list = Storage.getNoteList(Content.currentNoteBook);
-		if(list.length > 0){
-			ti.innerHTML = list[0];
-			var note = JSON.parse(Storage.getNote(list[0]));
-			ct.innerHTML = marked(note.content);
-		}
-	}	
-}
-
-Content.deleteNote = function(noteName){
-	Storage.deleteNote(noteName);
-};
-
 
 NoteList.viewNoteList =function(NoteBookName){
 	NoteList.updateList(NoteBookName);
@@ -438,8 +470,8 @@ NoteList.updateList = function(noteBookName){
 	noteCount.innerHTML = ''+list.length;
 	var ul = document.getElementById('note-list-target-ul');
 	ul.innerHTML = '';
-	list.forEach(function(element, index){
-		ul.appendChild(NoteList.createAList(element));
+	list.forEach(function(title, index){
+		ul.appendChild(NoteList.createAList(title));
 	});
 	var noteListTitle = document.getElementById('note-list-title');
 	if(noteBookName){
@@ -452,33 +484,42 @@ NoteList.updateList = function(noteBookName){
 
 var Storage = {};
 
-Storage.storeNote = function(title,content,category){
-	var list = localStorage.getItem('title-list');
-	if(list === null){
-		localStorage.setItem('title-list',title);
-	}else{
-		if(!Storage.isExists(title)){
-			localStorage.setItem('title-list',title+'&&&'+list);
-		}
-	}
-	if(!category){
-		category = '未分类';
-	}
-	var time = new Date();
-	var note = {
-		'title':title,
-		'content':content,
-		'category':category,
-		'time':time
-	};
-	localStorage.setItem(title,JSON.stringify(note));
+function Note(title,content,category){
+	this.title = title;	
+	this.content = content;
+	this.category = category || '未分类';
+	this.createTime = (new Date()).toString();
 }
+
+Storage.storeNote = function(titleOrNote,content,category,oldNoteTitle){
+	var note;
+	if(titleOrNote instanceof Object){
+		note = titleOrNote;
+		localStorage.setItem(note.title,JSON.stringify(note));
+	}else{
+		var title = titleOrNote;
+		var list = localStorage.getItem('notelist');
+		if(!list){
+			localStorage.setItem('notelist',title);
+		}else{
+			if(!Storage.isExists(title)){
+				localStorage.setItem('notelist',''+title +'&&&'+list);
+			}
+		}
+		note = new Note(title,content,category);
+		localStorage.setItem(title,JSON.stringify(note));
+	}
+	Storage.addNoteToCategory(title,category);
+	if(oldNoteTitle){
+		Storage.deleteNote(oldNoteTitle);
+	}
+};
 
 Storage.getNoteList = function(noteBookName){
 	var list = [];
 	var str;
-	if(noteBookName == null){
-		var str = localStorage.getItem('title-list');
+	if( ! noteBookName){
+		var str = localStorage.getItem('notelist');
 	}else{
 		str = localStorage.getItem('notebook_'+noteBookName);
 	}
@@ -488,34 +529,42 @@ Storage.getNoteList = function(noteBookName){
 	return list;
 };
 
-Storage.getNote = function(title){
-	//JSON.stringify()
-	return  localStorage.getItem(title);
+Storage.getNote = function(noteName){
+	var note = JSON.parse(localStorage.getItem(noteName));
+	return  note;
 };
 
-Storage.getNoteContent = function(title){
-	var note = JSON.parse(Storage.getNote(title));
+Storage.getNoteTitle = function(noteName){
+	var note = Storage.getNote(noteName);
+	return note.title;
+}
+
+Storage.getNoteContent = function(noteName){
+	var note = Storage.getNote(noteName);
 	return note.content;
 }
 
-Storage.getNoteCategory = function(title){
-	return localStorage.getItem(title);
+Storage.getNoteCategory = function(noteName){
+	var note = Storage.getNote(noteName);
+	return note.category;
 };
 
-Storage.deleteNote = function(title){
-	var listStr = localStorage.getItem('title-list');
+Storage.deleteNote = function(noteName){
+	var listStr = localStorage.getItem('notelist');
 	if(listStr.indexOf('&&&')!=-1){
-		listStr = listStr.replace(title+'&&&', '');
+		listStr = listStr.replace(noteName+'&&&', '');
 	}else{
 		listStr = '';
 	}
-	localStorage.setItem('title-list',listStr);
-	localStorage.removeItem(title);
+	localStorage.setItem('notelist',listStr);
+	var category = Storage.getNoteCategory(noteName);
+	Storage.removeNotefromCategory(noteName,category);
+	localStorage.removeItem(noteName);
 };
 
-Storage.isExists = function(title){
+Storage.isExists = function(noteName){
 	var list = Storage.getNoteList();
-	if(list.indexOf(title)!=-1){
+	if(list.indexOf(noteName)!=-1){
 		return true;
 	}else{
 		false;
@@ -523,29 +572,61 @@ Storage.isExists = function(title){
 }
 
 Storage.addNoteBook = function(bookName){
-	var notebookTableName = 'notebook';
-	var notebookStr = localStorage.getItem(notebookTableName);
+	var notebookStr = localStorage.getItem('notebook');
 	if(notebookStr){
 		var notebooks = notebookStr.split('&&&');
 		if(notebooks.indexOf(bookName)!=-1){
 			return;   //已经存在了
 		}
 		notebookStr = bookName + '&&&' + notebookStr;
-		localStorage.setItem(notebookTableName,notebookStr);
 	}else{
-		localStorage.setItem(notebookTableName,bookName);
+		notebookStr = bookName;
 	}
+	localStorage.setItem('notebook',notebookStr);
 }	
 
 Storage.getNoteBookList = function(){
-	var notebookTableName = 'notebook';
-	var notebookListStr = localStorage.getItem(notebookTableName);
+	var notebookListStr = localStorage.getItem('notebook');
 	if(notebookListStr){
 		return notebookListStr.split('&&&');
 	}else{
 		return [];
 	}
 }
+
+Storage.addNoteToCategory = function(title,category){
+	var list = Storage.getNoteList(category);
+	if(list.indexOf(title)==-1){
+		list.push(title);
+	}
+	localStorage.setItem('notebook_'+category,list.join('&&&'));
+};
+
+Storage.removeNotefromCategory = function(title,category){
+	var list = Storage.getNoteList(category);
+	var index = list.indexOf(title);
+	if(index!=-1){
+		list.splice(index,1);
+	}
+	localStorage.setItem('notebook_'+category,list.join('&&&'));
+};
+
+Storage.deleteNoteBook = function(noteBookName){
+	var noteList = Storage.getNoteList(noteBookName);
+	noteList.forEach(function(noteName, index){
+		var note = Storage.getNote(noteName);
+		note.category = '未分类';
+		console.log(note);
+		Storage.storeNote(note);
+	});
+	localStorage.removeItem('notebook_'+noteBookName);
+	var list = Storage.getNoteBookList();
+	var index  = list.indexOf(noteBookName);
+	if(index!=-1){
+		list.splice(index,1);
+	}
+	localStorage.setItem('notebook',list.join('&&&'));
+};
 
 var WY = {};
 

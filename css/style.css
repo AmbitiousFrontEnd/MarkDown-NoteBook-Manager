@@ -435,6 +435,16 @@ input:focus{
 .viewMode #save{
 	display: none;
 }
+
+.viewMode #select-category-ul{
+	display: none;
+}
+
+.writeMode  #select-category-ul{
+	display: inline-block;
+}
+
+
 .writeMode #edit{
 	display: none;
 }
@@ -574,7 +584,6 @@ p#delete-note-name{
 }
 
 #drop-down{
-	display: none;
 	position: absolute;
 	width: 326px;
 	background-color: #fff;
