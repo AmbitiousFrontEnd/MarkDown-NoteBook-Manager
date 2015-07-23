@@ -158,7 +158,7 @@ window.addEventListener('load', function(){
 	(function(){
 		var newNotebookCancal = document.getElementById('newnotebook-cancal');
 		newNotebookCancal.addEventListener('click',function(){
-			NoteBook.quitAddNoteBookPage();
+			UI.quitAddNoteBookPage();
 		});
 	})();
 
@@ -167,7 +167,8 @@ window.addEventListener('load', function(){
 		var newNotebookConfirm = document.getElementById('newnotebook-confirm');
 		newNotebookConfirm.addEventListener('click',function(){
 			if(this.classList.contains('enable')){
-				NoteBook.addNoteBook();	
+				NoteBook.addNoteBook();
+				UI.quitAddNoteBookPage();
 			}
 		});
 	})();
@@ -213,8 +214,9 @@ window.addEventListener('load', function(){
 					UI.enterDeleteNoteBookPage();
 					var deleteNotebookName = document.getElementById('delete-notebook-name');
 					deleteNotebookName.innerHTML = Content.readyToDeleteNoteBookName;
-				}else{ //edit
-
+				}else{ 
+					Content.readyToRenameNoteBookName = event.target.parentNode.parentNode.parentNode.parentNode.firstElementChild.innerHTML;
+					UI.enterRenameNoteBookPage();
 				}
 				event.stopPropagation();
 			}
@@ -235,6 +237,24 @@ window.addEventListener('load', function(){
 		})();
 
 
+		(function(){
+			var renamenotebookCancal = document.getElementById('renamenotebook-cancal');
+			renamenotebookCancal.addEventListener('click',function(){
+				UI.quitRenameNoteBookPage();
+			})
+
+			var renamenotebookConfirm = document.getElementById('renamenotebook-confirm');
+			renamenotebookConfirm.addEventListener('click',function(event){
+				var newName = document.getElementById('input-rename-notebook-name').value;
+				if(newName){
+					Storage.renameNoteBook(Content.readyToRenameNoteBookName,newName);
+					UI.quitRenameNoteBookPage();
+					UI.updateNoteBookList();
+				}
+			});
+		})();
+
+
 	})();
 
 	// 选择分类
@@ -243,6 +263,7 @@ window.addEventListener('load', function(){
 		var dropDown = document.getElementById('drop-down');
 		
 		selectCategory.addEventListener('click',function(){
+			CategorySelectList.updateList();
 			WY.replaceClass(dropDown,'block','none');
 		});
 
@@ -262,9 +283,6 @@ window.addEventListener('load', function(){
 			WY.replaceClass(this,'none','block');
 		});
 	})();
-
-
-
 });
 
 
@@ -284,18 +302,13 @@ NoteBook.enterAddNoteBookPage = function(){
 	WY.replaceClass(newnotebookpopup,'block','none');
 };
 
-NoteBook.quitAddNoteBookPage = function(){
-	var noteBookNameInputer = document.getElementById('input-notebook-name');
-	noteBookNameInputer.value = "";
-	var newNotebookPopup = document.getElementById('new-notebook-popup');
-	WY.replaceClass(newNotebookPopup,'none','block');
-};
+
 
 NoteBook.addNoteBook = function(){
 	var noteBookNameInputer = document.getElementById('input-notebook-name');
 	var newNoteBookName = noteBookNameInputer.value;
 	Storage.addNoteBook(newNoteBookName);
-	NoteBook.quitAddNoteBookPage();
+	UI.quitAddNoteBookPage();
 	UI.updateNoteBookList();
 };
 
@@ -349,6 +362,13 @@ UI.enterAddNoteBookPage = function(){
 	newnotebookpopup.style.display = 'block';
 };
 
+UI.quitAddNoteBookPage = function(){
+	var noteBookNameInputer = document.getElementById('input-notebook-name');
+	noteBookNameInputer.value = "";
+	var newNotebookPopup = document.getElementById('new-notebook-popup');
+	WY.replaceClass(newNotebookPopup,'none','block');
+};
+
 UI.enterDeleteNotePage = function(title){
 	var deleteNotePage = document.getElementById('delete-note-popup');
 	deleteNotePage.style.display = 'block';
@@ -370,6 +390,15 @@ UI.quitDeleteNoteBookPage = function(){
 	deleteNotebookPopup.style.display = 'none';
 };
 
+UI.enterRenameNoteBookPage = function(){
+	var renameNotebookPopup = document.getElementById('rename-notebook-popup');
+	renameNotebookPopup.style.display = 'block';
+};
+
+UI.quitRenameNoteBookPage = function(){
+	var renameNotebookPopup = document.getElementById('rename-notebook-popup');
+	renameNotebookPopup.style.display = 'none';
+};
 UI.enterFullSrceenMode = function(){
 	document.body.setAttribute('id', 'fullScreenMode');
 };
@@ -401,7 +430,10 @@ UI.updateContent =function(noteName){
 			ti.innerHTML = '';
 			ct.innerHTML = '';
 		}
-	}	
+	}
+	if(document.querySelector('pre code')){
+		WY.highLightCode();
+	}
 };
 
 UI.updateNoteBookList = function(){
@@ -413,6 +445,10 @@ UI.updateNoteBookList = function(){
 		var li = listTemplete.cloneNode(true);
 		var p = li.querySelector('p');
 		p.innerHTML = notebookName;
+		if(notebookName == '未分类'){
+			var div = li.querySelector('div');
+			div.style.display = 'none';
+		}
 		ul.appendChild(li);		
 	});
 	var notebookElem = document.getElementById('notebook-list');
@@ -431,13 +467,13 @@ CategorySelectList.updateList = function(){
 	var ul = document.getElementById('category-select-list');
 	var li = document.getElementById('category-list-templete').firstElementChild;
 	ul.innerHTML = '';
-	list.forEach(function(notebookName, index){
+	list.forEach(function(category, index){
 		var li_ = li.cloneNode(true);
-		li_.firstElementChild.innerHTML = notebookName;
-		var noteList = Storage.getNoteList(notebookName);
+		li_.firstElementChild.innerHTML = category;
+		var noteList = Storage.getNoteList(category);
 		if(noteList.indexOf(Content.currentProcNoteName)!=-1){
 			li_.classList.add('category-select');
-			document.getElementById('category').innerHTML = notebookName;
+			document.getElementById('category').innerHTML = category;
 		}
 		ul.appendChild(li_);
 	});
@@ -495,6 +531,10 @@ Storage.storeNote = function(titleOrNote,content,category,oldNoteTitle){
 	var note;
 	if(titleOrNote instanceof Object){
 		note = titleOrNote;
+		var oldNote = Storage.getNote(note.title);
+		if(oldNote.category != note.category){
+			Storage.removeNotefromCategory(oldNote.title,oldNote.category);
+		}
 		localStorage.setItem(note.title,JSON.stringify(note));
 	}else{
 		var title = titleOrNote;
@@ -507,10 +547,18 @@ Storage.storeNote = function(titleOrNote,content,category,oldNoteTitle){
 			}
 		}
 		note = new Note(title,content,category);
+		oldNote = Storage.getNote(title);
+		if(oldNote){
+			if(oldNote.category != category){
+				Storage.removeNotefromCategory(title,oldNote.category);
+			}
+		}
 		localStorage.setItem(title,JSON.stringify(note));
 	}
 	Storage.addNoteToCategory(title,category);
 	if(oldNoteTitle){
+		var oldNote = Storage.getNote(oldNoteTitle);
+		Storage.removeNotefromCategory(oldNote.title,oldNote.category);
 		Storage.deleteNote(oldNoteTitle);
 	}
 };
@@ -604,6 +652,9 @@ Storage.addNoteToCategory = function(title,category){
 
 Storage.removeNotefromCategory = function(title,category){
 	var list = Storage.getNoteList(category);
+	if(!list){
+		return;
+	}
 	var index = list.indexOf(title);
 	if(index!=-1){
 		list.splice(index,1);
@@ -628,6 +679,29 @@ Storage.deleteNoteBook = function(noteBookName){
 	localStorage.setItem('notebook',list.join('&&&'));
 };
 
+
+Storage.renameNoteBook = function(oldName,newName){
+	var notebooklist = Storage.getNoteBookList();
+	var index = notebooklist.indexOf(oldName);
+	if(index != -1){
+		notebooklist.splice(index, 1);
+	}
+	index = notebooklist.indexOf(newName);
+	if(index == -1){
+		notebooklist.push(newName);
+	}
+	localStorage.setItem('notebook',notebooklist.join('&&&'));
+	var oldContent = localStorage.getItem('notebook_'+oldName);
+	localStorage.setItem('notebook_'+newName,oldContent);
+	localStorage.removeItem('notebook_'+oldName);
+	var list = oldContent.split('&&&');
+	list.forEach(function(noteName, index){
+		var note = Storage.getNote(noteName);
+		note.category = newName;
+		Storage.storeNote(note);
+	});
+}
+
 var WY = {};
 
 WY.getStyle = function(elem,styleName){
@@ -638,4 +712,32 @@ WY.getStyle = function(elem,styleName){
 WY.replaceClass = function(elem,newClass,oldClass){
 	elem.classList.remove(oldClass);
 	elem.classList.add(newClass);
+}
+
+WY.highLightCode = function(){
+	var script = document.getElementById('highLightScript');
+	if(!script){
+		script = document.createElement('script');
+		script.setAttribute('id','highLightScript');
+		script.setAttribute('src', 'http://apps.bdimg.com/libs/highlight.js/8.6/highlight.min.js');
+
+		var link = document.createElement('link');
+		link.setAttribute('type', 'text/css');
+		link.setAttribute('rel', 'stylesheet');
+		link.setAttribute('href', 'http://apps.bdimg.com/libs/highlight.js/8.6/styles/atelier-cave.dark.min.css');
+		var head = document.getElementsByTagName('head')[0];
+		head.appendChild(link);
+		head.appendChild(script);
+		script.addEventListener('load',function(){
+			var codeBlock =document.querySelectorAll('pre code');
+			for(var i = codeBlock.length-1;i>=0;i--){
+				hljs.highlightBlock(codeBlock[i].parentNode);		
+			}
+		});
+	}else{
+		var codeBlock =document.querySelectorAll('pre code');
+		for(var i = codeBlock.length-1;i>=0;i--){
+			hljs.highlightBlock(codeBlock[i].parentNode);		
+		}
+	}
 }

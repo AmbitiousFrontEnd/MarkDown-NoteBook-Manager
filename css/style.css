@@ -352,12 +352,8 @@ pre code{
 	float: left;
 }
 
-#over-title{
-	  padding-left: 100px;
-}
-
 .note-content>header>p{
-	padding: 20px 20px;
+	padding: 20px 0px;
 	float: left;
 	font-size: 1.3em;
 }
@@ -554,11 +550,12 @@ input:focus{
 	background-color: #28a955;
 }
 
-p#delete-note-name{
+p#delete-note-name,p#delete-notebook-name{
 	font-size: 2em;
 	color:#2dbe60;
 	margin-bottom: 20px; 
 }
+
 
 
 #delete-note-popup{
@@ -649,4 +646,23 @@ p#delete-note-name{
 }
 .list-selected{
 	border: 2px solid #ccc;
+}
+
+
+.btn{
+	color: #fff;
+	border-radius: 5px;
+}
+
+
+.btn:hover{
+	opacity: 0.7;
+}
+
+.green-btn{
+	background-color: #2dbe60;
+}
+
+.gray-btn{
+	background-color: #ccc;
 }
