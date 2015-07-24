@@ -1,5 +1,6 @@
 window.addEventListener('load', function(){
 
+	Storage.init();
 	UI.init();
 
 	// 点击创建笔记按钮之后的事件
@@ -702,6 +703,19 @@ Storage.renameNoteBook = function(oldName,newName){
 	});
 }
 
+
+Storage.init = function(){
+	if(Storage.getNoteList().length == 0){  // 没有笔记
+		var content = "```javascript\n"+UI.init.toString()+"\n```";
+		var title = "给笔记添加代码高亮的功能";
+		var category = "js";
+		Storage.storeNote(title,content,category);
+		content = "希望大家多多指教";
+		title = "多谢查看demo";
+		Storage.storeNote(title,content,category);
+	}
+}
+
 var WY = {};
 
 WY.getStyle = function(elem,styleName){
@@ -720,7 +734,6 @@ WY.highLightCode = function(){
 		script = document.createElement('script');
 		script.setAttribute('id','highLightScript');
 		script.setAttribute('src', 'http://apps.bdimg.com/libs/highlight.js/8.6/highlight.min.js');
-
 		var link = document.createElement('link');
 		link.setAttribute('type', 'text/css');
 		link.setAttribute('rel', 'stylesheet');
@@ -741,3 +754,4 @@ WY.highLightCode = function(){
 		}
 	}
 }
+
